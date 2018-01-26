@@ -16,7 +16,8 @@ example:
 　  开放管理MySQL中所有数据库的权限
 　　grant all on *.* to ad@'192.168.0.10' identified by "ad_pass";
 */
-　
+
+
 grant select, insert, update, delete on snowing.* to 'www-data'@'localhost' identified by 'www-data';
 
 create table users (
