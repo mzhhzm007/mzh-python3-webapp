@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# ORM:object relational mapping 对象-关系映射
+# 把关系数据库的一行映射为一个对象，也就是一个类对应一个表
+# ORM框架所有的类只能动态定义，因为只有使用者才能根据表的结构定义出对应的类来
 
 __author__ = 'Harris Miao'
 import asyncio
@@ -65,7 +68,7 @@ def create_args_string(num):
         L.append('?')
     return ', '.join(L)
 
-
+# 定义Field(定义域：元类遇到Field的方法或属性时即进行修改）
 class Field(object):
     def __init__(self, name, column_type, primary_key, default):
         self.name = name
@@ -108,7 +111,15 @@ class TextField(Field):
 
 
 class ModelMetaclass(type):
+
+    # __new__方法接受的参数依次是：
+    # 1.当前准备创建的类的对象（cls）
+    # 2.类的名字（name）
+    # 3.类继承的父类集合(bases)
+    # 4.类的方法集合(attrs)
+
     def __new__(cls, name, bases, attrs):
+        # 如果说新创建的类的名字是Model，那直接返回不做修改
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
         tableName = attrs.get('__table__', None) or name
@@ -118,6 +129,7 @@ class ModelMetaclass(type):
         primaryKey = None
         for k, v in attrs.items():
             if isinstance(v, Field):
+                # 找到映射， 这里用到Field类中的的__str__
                 logging.info('  found mapping: %s ==> %s' % (k, v))
                 mappings[k] = v
                 if v.primary_key:
@@ -221,8 +233,8 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def find(cls, pk):
         ' find object by primary key. '
-        rs = await select('%s where `%s`=?' %
-                               (cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = await select('%s where `%s`=?' % (cls.__select__,
+                                               cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0])
