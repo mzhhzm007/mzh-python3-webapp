@@ -10,6 +10,25 @@ from aiohttp import web
 from apis import APIError
 
 
+'''
+#比如@get加在下面的函数上
+@get('/signout')
+def signout(request):
+    referer = request.headers.get('Referer')
+    r = web.HTTPFound(referer or '/')
+    r.set_cookie(COOKIE_NAME, '-deleted-', max_age=0, httponly=True)
+    logging.info('user signed out.')
+    return r
+相当于signout=get('/signout')(signout)
+此时调用了get装饰器，返回了decorator函数，再调用返回的这个decorator函数，参数是signout,即decorator(signout)
+根据decorator(func)的定义，会返回一个wrapper函数，但是它没有调用，只有当signout(request)调用的时候，其实才会调用
+wrapper函数，即调用wrapper(request)
+
+wrapper.__method__ = 'GET'
+wrapper.__route__ = path
+这里wrapper添加了两个私有属性，在后续调用的时候，wrapper(*args, **kw)里面调用func(*args, **kw)，这两个属性也会加入
+后面就可以获取这两个属性，一个是path一个是http请求方法
+'''
 def get(path):
     '''
     Define decorator @get('/path')
@@ -44,6 +63,22 @@ def post(path):
     return decorator
 
 
+'''
+POSITIONAL_ONLY         位置参数，可能类似self这种参数，必须在第一位的
+POSITIONAL_OR_KEYWORD   没有任何*声明，可以通过位置或者关键字传参
+VAR_POSITIONAL          可变参数，通过*声明
+KEYWORD_ONLY            命名关键字参数，这种参数只会在VAR_POSITIONAL类型参数（可变参数）的后面而且不带**前缀
+                        用特殊分隔符*隔开，或者前面有可变参数的话，可以不加*
+VAR_KEYWORD             关键字参数，**声明
+'''
+'''
+POSITIONAL_OR_KEYWORD和KEYWORD_ONLY可以自定义默认参数
+而VAR_POSITIONAL和VAR_KEYWORD不允许自定义默认参数的
+因为VAR_POSITIONAL的默认参数是tuple()空元祖
+而VAR_KEYWORD的默认参数是dict()空字典
+'''
+
+#获取没有默认参数的命名关键字参数，这些是需要调用的时候赋值的
 def get_required_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -52,7 +87,7 @@ def get_required_kw_args(fn):
             args.append(name)
     return tuple(args)
 
-
+#获取命名关键字参数
 def get_named_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -61,21 +96,21 @@ def get_named_kw_args(fn):
             args.append(name)
     return tuple(args)
 
-
+#判断是否有命名关键字参数
 def has_named_kw_args(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY:
             return True
 
-
+#判断是否有关键词参数
 def has_var_kw_arg(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             return True
 
-
+#判断是否有request参数
 def has_request_arg(fn):
     sig = inspect.signature(fn)
     params = sig.parameters
@@ -192,7 +227,7 @@ def add_routes(app, module_name):
             continue
         fn = getattr(mod, attr)
         if callable(fn):
-            method = getattr(fn, '__method__', None)
+            method = getattr(fn, '__method__', None)#这两个属性就是get和post的装饰器里加进去的
             path = getattr(fn, '__route__', None)
             if method and path:
                 add_route(app, fn)
