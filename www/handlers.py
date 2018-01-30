@@ -98,19 +98,25 @@ async def index(request):
             created_at=time.time() - 7200)
     ]
     cookie_str = request.cookies.get(COOKIE_NAME)
-    user=''
+    user = ''
     if cookie_str:
         if 'deleted' in cookie_str:
-            user=''
+            user = ''
         else:
-            user=await cookie2user(cookie_str)
-    print (user)        
-    return {
-        '__template__': 'blogs.html',
-        'blogs': blogs,
-        '__user__': user
-        }
+            user = await cookie2user(cookie_str)
+    return {'__template__': 'blogs.html', 'blogs': blogs, '__user__': user}
     #return {'__template__': 'blogs.html', 'blogs': blogs}
+
+
+@get('/blog/{id}')
+async def get_blog(id):
+    blog = await Blog.find(id)
+    comments = await Comment.findAll(
+        'blog_id=?', [id], orderBy='created_at desc')
+    for c in comments:
+        c.html_content = text2html(c.content)
+    blog.html_content = markdown2.markdown(blog.content)
+    return {'__template__': 'blog.html', 'blog': blog, 'comments': comments}
 
 
 @get('/register')
@@ -204,12 +210,24 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 
+#just a test
 @get('/api/users')
 async def api_get_users():
     users = await User.findAll(orderBy='created_at desc')
     for u in users:
         u.passwd = '******'
     return dict(users=users)
+
+
+@get('/api/blogs/{id}')
+async def api_get_blog(*, id):
+    blog = await Blog.find(id)
+    blog = [blog]  #need to make a list
+    return {
+        '__template__': 'blogs.html',
+        'blogs': blog
+        #'__user__': user
+    }
 
 
 @post('/api/blogs')
