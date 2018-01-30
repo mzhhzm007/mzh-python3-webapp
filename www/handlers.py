@@ -108,7 +108,7 @@ async def index(request):
     return {
         '__template__': 'blogs.html',
         'blogs': blogs,
-        'user': user
+        '__user__': user
         }
     #return {'__template__': 'blogs.html', 'blogs': blogs}
 
@@ -213,7 +213,7 @@ async def api_get_users():
 
 
 @post('/api/blogs')
-def api_create_blog(request, *, name, summary, content):
+async def api_create_blog(request, *, name, summary, content):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name cannot be empty.')
@@ -228,5 +228,5 @@ def api_create_blog(request, *, name, summary, content):
         name=name.strip(),
         summary=summary.strip(),
         content=content.strip())
-    yield from blog.save()
+    await blog.save()
     return blog
