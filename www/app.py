@@ -7,6 +7,7 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 import logging
 import orm
+#logging.basicConfig(level=logging.INFO)放最后import好像会被handlers里的markdown2引入的logging影响，导致log不输出
 logging.basicConfig(level=logging.INFO)
 from coroweb import add_routes, add_static
 from handlers import cookie2user, COOKIE_NAME
