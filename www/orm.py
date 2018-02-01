@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ORM:object relational mapping 对象-关系映射
 # 把关系数据库的一行映射为一个对象，也就是一个类对应一个表

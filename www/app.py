@@ -1,14 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import asyncio
 import os, json, time
 from datetime import datetime
-
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 import logging
 import orm
+logging.basicConfig(level=logging.INFO)
 from coroweb import add_routes, add_static
 from handlers import cookie2user, COOKIE_NAME
-logging.basicConfig(level=logging.INFO)
+
+print('run')
+
+
 '''
 async web application.
 

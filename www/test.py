@@ -3,7 +3,8 @@
 # import asyncio
 # loop = asyncio.get_event_loop()
 
-
+import logging
+logging.basicConfig(level=logging.INFO)
 # async def test():
 #     await orm.create_pool(
 #         loop=loop,
@@ -29,7 +30,7 @@ def consumer():
         nn = yield r
         if not nn:
             return
-        print('[CONSUMER] Consuming %s...' % nn)
+        logging.info('[CONSUMER] Consuming %s...' % nn)
         r = '200 OK'
 
 def produce(c):
@@ -39,7 +40,7 @@ def produce(c):
         n = n + 1
         print('[PRODUCER] Producing %s...' % n)
         r = c.send(n)
-        print('[PRODUCER] Consumer return: %s' % r)
+        logging.info('[PRODUCER] Consumer return: %s' % r)
     c.close()
 
 c = consumer()

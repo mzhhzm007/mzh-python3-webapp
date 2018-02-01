@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 ' url handlers '
@@ -9,13 +9,58 @@ import markdown2
 from aiohttp import web
 
 from coroweb import get, post
-from apis import Page,APIValueError, APIResourceNotFoundError
+from apis import Page, APIValueError, APIResourceNotFoundError
 
 from models import User, Comment, Blog, next_id
 from config import configs
 
 COOKIE_NAME = 'snowsession'
 _COOKIE_KEY = configs.session.secret
+'''
+后端API包括：
+
+获取日志：GET /api/blogs
+
+创建日志：POST /api/blogs
+
+修改日志：POST /api/blogs/:blog_id
+
+删除日志：POST /api/blogs/:blog_id/delete
+
+获取评论：GET /api/comments
+
+创建评论：POST /api/blogs/:blog_id/comments
+
+删除评论：POST /api/comments/:comment_id/delete
+
+创建新用户：POST /api/users
+
+获取用户：GET /api/users
+
+管理页面包括：
+
+评论列表页：GET /manage/comments
+
+日志列表页：GET /manage/blogs
+
+创建日志页：GET /manage/blogs/create
+
+修改日志页：GET /manage/blogs/
+
+用户列表页：GET /manage/users
+
+用户浏览页面包括：
+
+注册页：GET /register
+
+登录页：GET /signin
+
+注销页：GET /signout
+
+首页：GET /
+
+日志详情页：GET /blog/:blog_id
+'''
 
 
 def check_admin(request):
@@ -77,6 +122,7 @@ async def cookie2user(cookie_str):
         return None
 
 
+#home page
 @get('/')
 async def index(request):
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
@@ -108,6 +154,7 @@ async def index(request):
     #return {'__template__': 'blogs.html', 'blogs': blogs}
 
 
+#get blog detail page
 @get('/blog/{id}')
 async def get_blog(id):
     blog = await Blog.find(id)
@@ -119,11 +166,13 @@ async def get_blog(id):
     return {'__template__': 'blog.html', 'blog': blog, 'comments': comments}
 
 
+#get register page
 @get('/register')
 def register():
     return {'__template__': 'register.html'}
 
 
+#get signin page
 @get('/signin')
 def signin():
     return {'__template__': 'signin.html'}
@@ -156,6 +205,7 @@ async def authenticate(*, email, passwd):
     return r
 
 
+#get signout page
 @get('/signout')
 def signout(request):
     referer = request.headers.get('Referer')
@@ -164,6 +214,8 @@ def signout(request):
     logging.info('user signed out.')
     return r
 
+
+#get blog list page
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
     return {
@@ -171,6 +223,18 @@ def manage_blogs(*, page='1'):
         'page_index': get_page_index(page)
     }
 
+
+#get comment list page
+@get('/manage/comments')
+def manage_comments(*, page='1'):
+    # return {
+    #     '__template__': 'manage_blogs.html',
+    #     'page_index': get_page_index(page)
+    # }
+    pass
+
+
+#get create blog page
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
@@ -180,11 +244,34 @@ def manage_create_blog():
     }
 
 
+#get modify blog page
+@get('/manage/blogs/{id}')
+def manage_modify_blog():
+    # return {
+    #     '__template__': 'manage_blog_edit.html',
+    #     'id': '',
+    #     'action': '/api/blogs'
+    # }
+    pass
+
+
+#get users page
+@get('/manage/users')
+def manage_users():
+    # return {
+    #     '__template__': 'manage_blog_edit.html',
+    #     'id': '',
+    #     'action': '/api/blogs'
+    # }
+    pass
+
+
 _RE_EMAIL = re.compile(
     r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
 
+#create user
 @post('/api/users')
 async def api_register_user(*, email, name, passwd):
     if not name or not name.strip():
@@ -216,7 +303,7 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 
-#just a test
+#get users
 @get('/api/users')
 async def api_get_users():
     users = await User.findAll(orderBy='created_at desc')
@@ -224,6 +311,8 @@ async def api_get_users():
         u.passwd = '******'
     return dict(users=users)
 
+
+#get blogs
 @get('/api/blogs')
 async def api_blogs(*, page='1'):
     page_index = get_page_index(page)
@@ -231,10 +320,9 @@ async def api_blogs(*, page='1'):
     p = Page(num, page_index)
     if num == 0:
         return dict(page=p, blogs=())
-    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    blogs = await Blog.findAll(
+        orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
-
-
 
 
 @get('/api/blogs/{id}')
@@ -248,6 +336,7 @@ async def api_get_blog(*, id):
     }
 
 
+#create blog
 @post('/api/blogs')
 async def api_create_blog(request, *, name, summary, content):
     check_admin(request)
@@ -266,3 +355,33 @@ async def api_create_blog(request, *, name, summary, content):
         content=content.strip())
     await blog.save()
     return blog
+
+
+#modify blog
+@post('/api/blogs/{id}')
+async def api_modify_blog(request,*, name, summary, content):
+    pass
+
+
+#delete blog
+@post('/api/blogs/{id}/delete')
+async def api_delete_blog(request):
+    pass
+
+
+#get comments
+@get('/api/comments')
+async def api_delete_blog(request,*, id):
+    pass
+
+
+#create comments
+@post('/api/blogs/{id}/comments')
+async def api_delete_blog(request,*, content):
+    pass
+
+
+#delete comments
+@post('/api/comments/{id}/delete')
+async def api_delete_comments(request,*, content):
+    pass
